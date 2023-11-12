@@ -13,7 +13,6 @@ from functools import wraps
 # from sqlalchemy import Table, Column, Integer, foreignKey
 import os
 
-
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY')
 ckeditor = CKEditor(app)
@@ -21,7 +20,7 @@ ckeditor = CKEditor(app)
 # Base = declarative_base()
 Bootstrap(app)
 
-gravatar = Gravatar(app,size=100,
+gravatar = Gravatar(app, size=100,
                     rating='g',
                     default='retro',
                     force_default=False,
@@ -30,7 +29,7 @@ gravatar = Gravatar(app,size=100,
                     base_url=None
                     )
 
-##CONNECT TO DB
+# CONNECT TO DB
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///blog.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
@@ -48,6 +47,7 @@ class User(UserMixin, db.Model):
 
     # how to create parent to child
     comments = relationship('Comment', back_populates=comment_author)
+
     #
     # def __init__(self, arg):
     #     superUser, self).__init__()
@@ -56,7 +56,7 @@ class User(UserMixin, db.Model):
     # comment Table
 
     class Comment(db.Model):
-        __table__= 'comments'
+        __table__ = 'comments'
         id = db.Column(db.Integer, primary_key=True)
 
         author_id = db.Column(db.Integer, db.foreignKey('users.id'))
@@ -64,7 +64,7 @@ class User(UserMixin, db.Model):
         # text = db.Column(db.String(100))
 
         post_id = db.Column(db.Integer, db.foreignKey('blog_posts.id'))
-        parent_post= relationship('BlogPost', back_populates='comments')
+        parent_post = relationship('BlogPost', back_populates='comments')
         text = db.Column(db.Text, nullable=False)
         # text =
 
@@ -73,14 +73,15 @@ class User(UserMixin, db.Model):
         #
         # author = relationship('User', back_populates='posts'
 
-#relationship between comment and user
+
+# relationship between comment and user
 # class User(db.model):
 #     __table__ = 'user'
 #     id =
 #     author
 
 
-##CONFIGURE TABLES
+# CONFIGURE TABLES
 
 class BlogPost(db.Model):
     __tablename__ = "blog_posts"
@@ -95,8 +96,9 @@ class BlogPost(db.Model):
     date = db.Column(db.String(250), nullable=False)
     body = db.Column(db.Text, nullable=False)
     img_url = db.Column(db.String(250), nullable=False)
-# child to parent relationship
+    # child to parent relationship
     commenting = relationship('Comment', back_populates='parent_post')
+
 
 db.create_all()
 
@@ -116,10 +118,9 @@ def register():
             flash('You have already signed up with that email, log in stead!')
             return redirect(url_for('login'))
 
-
         hash_and_salt = generate_password_hash(
             form.password.data,
-            method='phbkd2:sha256',
+            method='pbkdf2:sha256',
             salt_length=8
         )
         new_user = User(
@@ -132,15 +133,15 @@ def register():
         login_user(new_user)
         return redirect(url_for('get_all_posts'))
 
-        return redirect(url_for('get_all_posts'))
+        # return redirect(url_for('get_all_posts'))
     return render_template("register.html", form=form, current_user=current_user)
+
 
 # ------- admin deco
 # @app.errorhandler(404)
 # def page_not(e):
 #     return render_template('404.html'), 404
 @app.route('/new-post')
-
 def admin_only(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
@@ -148,7 +149,9 @@ def admin_only(f):
             return abort(403)
             # return redirect(url_for('login', next=request.url))
         return f(*args, **kwargs)
+
     return decorated_function
+
 
 # admin_only =
 # admin_only,init(app)
@@ -159,10 +162,12 @@ def admin_only(f):
 login_manager = LoginManager()
 login_manager.init(app)
 
-#  i forgot the below cod
+
+#  I forgot the below cod
 @login_required.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
+
 
 @app.route('/login', methods=['GET', 'POST'])
 @login_required
@@ -204,15 +209,13 @@ def show_post(post_id):
             Flash('You need to login or register to comment')
             return redirect(url_for('login'))
 
-
         new_comment = Comment(
-            text = form.comment_text.data,
-            comment = current_user,
-            parent_post = requested_post
+            text=form.comment_text.data,
+            comment=current_user,
+            parent_post=requested_post
         )
         db.session(new_comment)
         db.session.commit()
-
 
     return render_template("post.html", post=requested_post, form=form, current_user=current_user)
 
