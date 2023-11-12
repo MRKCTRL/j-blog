@@ -1,4 +1,4 @@
-from flask import Flask, render_template, redirect, url_for, flash
+from flask import Flask, render_template, redirect, url_for, flash, g, request
 from flask_bootstrap import Bootstrap
 from flask_ckeditor import CKEditor
 from datetime import date
@@ -9,12 +9,13 @@ from flask_login import UserMixin, login_user, LoginManager, login_required, cur
 from forms import CreatePostForm, RegisterForm, LoginForm
 from flask_gravatar import Gravatar
 from functools import wraps
-from flask import g, request, redirect, url_for
-from sqlalchemy import Table, Column, Integer, foreignKey
+# from flask import g, request, redirect, url_for
+# from sqlalchemy import Table, Column, Integer, foreignKey
+import os
 
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = '8BYkEfBA6O6donzWlSihBXox7C0sKR6b'
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY')
 ckeditor = CKEditor(app)
 # sqlalchemy
 # Base = declarative_base()
@@ -63,7 +64,7 @@ class User(UserMixin, db.Model):
         # text = db.Column(db.String(100))
 
         post_id = db.Column(db.Integer, db.foreignKey('blog_posts.id'))
-        parent_post= relationship('BlogPost', back_populates'comments)
+        parent_post= relationship('BlogPost', back_populates='comments')
         text = db.Column(db.Text, nullable=False)
         # text =
 
@@ -117,7 +118,7 @@ def register():
 
 
         hash_and_salt = generate_password_hash(
-            form,password.data,
+            form.password.data,
             method='phbkd2:sha256',
             salt_length=8
         )
@@ -149,8 +150,8 @@ def admin_only(f):
         return f(*args, **kwargs)
     return decorated_function
 
-admin_only =
-admin_only,init(app)
+# admin_only =
+# admin_only,init(app)
 
 
 # TODO: edit index, envir variables day 35, FLASK AND GITINGORE
@@ -168,7 +169,7 @@ def load_user(user_id):
 def login():
     form = LoginForm()
     if form.validate_on_submit():
-        email = for.email.data
+        email = form.email.data
         password = form.password.data
 
         user = User.query.filter_by(email=email).first()
@@ -190,7 +191,7 @@ def login():
 @app.route('/logout')
 def logout():
     logout_user()
-    return redirect(url_for('get_all_posts')))
+    return redirect(url_for('get_all_posts'))
     # redirect(url_for('get_all_posts'))
 
 
@@ -198,16 +199,15 @@ def logout():
 @login_required
 def show_post(post_id):
     requested_post = BlogPost.query.get(post_id)
-
     if form.validate_on_submit():
         if not current_user_is_authenticated:
-            flash('You need to login or register to comment')
+            Flash('You need to login or register to comment')
             return redirect(url_for('login'))
 
 
         new_comment = Comment(
-            text =form.comment_text.data,
-            comment =current_user,
+            text = form.comment_text.data,
+            comment = current_user,
             parent_post = requested_post
         )
         db.session(new_comment)
@@ -266,7 +266,7 @@ def edit_post(post_id):
         db.session.commit()
         return redirect(url_for("show_post", post_id=post.id))
 
-    return render_template("make-post.html", form=edit_form, is_edit=True current_user=current_user)
+    return render_template("make-post.html", form=edit_form, is_edit=True, current_user=current_user)
 
 
 @app.route("/delete/<int:post_id>")
